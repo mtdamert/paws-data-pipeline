@@ -125,7 +125,7 @@ def getStatistics():
             SUM(CASE WHEN salesforcecontacts_id is not null and volgistics_id is not null and shelterluvpeople_id is null THEN 1 ELSE 0 END) AS \"Only Salesforce & Volgistics\", \
             SUM(CASE WHEN volgistics_id is not null and shelterluvpeople_id is not null and salesforcecontacts_id is null THEN 1 ELSE 0 END) AS \"Only Shelterluv & Volgistics\", \
             SUM(CASE WHEN salesforcecontacts_id is not null and volgistics_id is not null and shelterluvpeople_id is not null THEN 1 ELSE 0 END) AS \"Salesforcec & Shelterluv & Volgistics\" \
-            FROM master")
+            FROM matches")
         query_result = connection.execute(query)
 
         # Need to iterate over the results proxy

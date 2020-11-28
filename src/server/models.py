@@ -8,8 +8,8 @@ from sqlalchemy.orm import relationship
 Base = declarative_base()
 
 
-class Master(Base):
-    __tablename__ = "master"
+class Matches(Base):
+    __tablename__ = "matches"
 
     _id = Column(Integer, primary_key=True)
     salesforcecontacts_id = Column(String, default=None)
@@ -23,7 +23,7 @@ class User(Base):
     __tablename__ = "user_info"
 
     _id = Column(Integer, primary_key=True)
-    master_id = Column(Integer, ForeignKey("master._id"))
+    matches_id = Column(Integer, ForeignKey("matches._id"))
     name = Column(String)
     email = Column(String)
     source = Column(String)

@@ -6,7 +6,7 @@ from fuzzywuzzy import fuzz
 from flask import current_app
 
 from datasource_manager import DATASOURCE_MAPPING
-from pipeline.create_master_df import __create_new_user
+from pipeline.create_matches_df import __create_new_user
 
 
 # Matching columns and table order priority as established by
@@ -38,10 +38,10 @@ def df_fuzzy_score(df, column1_name, column2_name, **kwargs):
         return df.apply(lambda row: single_fuzzy_score(row[column1_name], row[column2_name], **kwargs), axis=1)
 
 
-def join_on_all_columns(master_df, table_to_join):
+def join_on_all_columns(matches_df, table_to_join):
     # attempts to join based on all columns
     left_right_indicator = '_merge'
-    join_results = master_df.merge(table_to_join, how='outer', indicator=left_right_indicator)
+    join_results = matches_df.merge(table_to_join, how='outer', indicator=left_right_indicator)
     return (
         join_results[join_results[left_right_indicator] == 'both'].drop(columns=left_right_indicator),
         join_results[join_results[left_right_indicator] == 'left_only'].drop(columns=left_right_indicator),
@@ -87,19 +87,19 @@ def _get_table_primary_key(source_name):
     return DATASOURCE_MAPPING[source_name]['id']
 
 
-def _get_master_primary_key(source_name):
+def _get_matches_primary_key(source_name):
     return source_name + '_id'
 
 
 def start(connection, added_or_updated_rows):
-    # Match newly identified records to each other and existing master data.
+    # Match newly identified records to each other and existing matches data.
 
     current_app.logger.info('Start record matching')
-    orig_master = pd.read_sql_table('master', connection)
+    orig_matches = pd.read_sql_table('matches', connection)
     input_matches = pd.DataFrame(columns=MATCH_FIELDS)
     input_matches['source'] = []  # also initializing an empty source field, similar to user_info
-    master_cols_to_keep = [x for x in MATCH_FIELDS]
-    master_cols_to_keep.append('source')
+    matches_cols_to_keep = [x for x in MATCH_FIELDS]
+    matches_cols_to_keep.append('source')
     
     # TODO: handling row updates (possibly)
     # Check consistency of updated_rows
@@ -109,7 +109,7 @@ def start(connection, added_or_updated_rows):
     #    if len(table_json) == 0:
     #        continue  # empty df, so nothing to do
     #    proposed_updates = pd.DataFrame(table_json)
-    # Then, map the proposed update ID back to master table to get the saved user_info name+email
+    # Then, map the proposed update ID back to matches table to get the saved user_info name+email
     # Only keep rows where there is a mismatch in name+email. Report these rows in the output dict.
         
     # Match records for new users
@@ -119,16 +119,16 @@ def start(connection, added_or_updated_rows):
             continue   # df is empty or not-updated, so there's nothing to do
         
         table_csv_key = _get_table_primary_key(table_name)
-        table_master_key = _get_master_primary_key(table_name)
+        table_matches_key = _get_matches_primary_key(table_name)
         table_cols = copy.deepcopy(MATCH_FIELDS)
         table_cols.append(table_csv_key)
 
         # Normalize table and rename columns for compatibility with users
         table_to_match = (
             pd.DataFrame(added_or_updated_rows['new_rows'][table_name])
-            .pipe(_reassign_combined_fields, {master_col: DATASOURCE_MAPPING[table_name][table_col] for master_col, table_col in MATCH_MAPPING.items()})
+            .pipe(_reassign_combined_fields, {matches_col: DATASOURCE_MAPPING[table_name][table_col] for matches_col, table_col in MATCH_MAPPING.items()})
             [table_cols]
-            .rename(columns={table_csv_key: table_master_key})
+            .rename(columns={table_csv_key: table_matches_key})
             .pipe(normalize_table_for_comparison, MATCH_FIELDS, orig_prefix='original_')
             .drop_duplicates()
         )
@@ -141,27 +141,27 @@ def start(connection, added_or_updated_rows):
                 input_matches['source_'+col] = np.nan
             input_matches['source_'+col].fillna(input_matches['original_'+col], inplace=True)
             del input_matches['original_'+col]
-        master_cols_to_keep.append(table_master_key)
+        matches_cols_to_keep.append(table_matches_key)
 
-    # Resolve new vs. updated records in the master table
+    # Resolve new vs. updated records in the matches table
     orig_users = pd.read_sql_table('user_info', connection)
     updated_users, new_users, unused_users = join_on_all_columns(
         input_matches,
         normalize_table_for_comparison(orig_users, MATCH_FIELDS)
     )
-    # Convert format of new_users -> master_table minus _id column plus name+email_source from user_info
+    # Convert format of new_users -> matches_table minus _id column plus name+email_source from user_info
     new_users = (
         new_users
         .drop(columns=MATCH_FIELDS).rename(columns={'source_'+x: x for x in MATCH_FIELDS})
-        [master_cols_to_keep]
+        [matches_cols_to_keep]
         .copy()
     )
-    # Convert format of updated_users -> master table. Reports the new table_id cols in terms of user_info
+    # Convert format of updated_users -> matches table. Reports the new table_id cols in terms of user_info
     updated_users = (
         updated_users
         [[x for x in updated_users.columns if x.endswith('_id')]]
         .drop(columns='_id')
-        .rename(columns={'master_id': '_id'})
+        .rename(columns={'matches_id': '_id'})
     )
 
     return {

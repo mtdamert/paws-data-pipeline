@@ -87,8 +87,8 @@ The desired output is a **database** that
 1. Stores raw data from files uploaded in R1
 2. Stores processed data to be used in subsequent requirements in the following tables
     2.1 Processed tables for all files in R1
-    2.2 A Master Table to be used in R3, with PAWS Data Pipeline (PDP) identifiers and tags to quickly identify entries as ambiguous or unambiguous
-    2.3 A Master Log (?) for all PAWS Staff resolution actions
+    2.2 A Matches Table to be used in R3, with PAWS Data Pipeline (PDP) identifiers and tags to quickly identify entries as ambiguous or unambiguous
+    2.3 A Matches Log (?) for all PAWS Staff resolution actions
 3. Survives container restart
 
 TODO:
@@ -109,8 +109,8 @@ The desired output is a **script** that
 The desired output is a **script** that 
 
 1. Identifies which individuals are the same across processed data sets from R3
-2. Creates and updates entries in the Master Table following a set of business rules, including
-2.1 For ambiguous contacts (uncertain if known or unknown), attach to Master Table entry a list of possible matches and/or matching issue
+2. Creates and updates entries in the Matches Table following a set of business rules, including
+2.1 For ambiguous contacts (uncertain if known or unknown), attach to Matches Table entry a list of possible matches and/or matching issue
 
 ### Requirement 5 (R5):  Create a web interface to review and resolve ambiguous records
 
@@ -207,7 +207,7 @@ Animals processing and associating them appropriately with contacts is more comp
 
 Updated Solution April 2020:
  - Animal adoption and fostering instances would be identified from Petpoint.  
- - Each adoption/fostering instance would be associated with the corresponding human contact from PAWS Data Pipeline master table (and thus linking to contact instances in Salesforce and other repositories)
+ - Each adoption/fostering instance would be associated with the corresponding human contact from PAWS Data Pipeline matches table (and thus linking to contact instances in Salesforce and other repositories)
  - A set of fields will be set up on the Salesforce Contact object for instances of adoptions/fosters
  - Adoption/Foster instances will be added to the appropriate contacts in Salesforce, listing the date of placement.
 

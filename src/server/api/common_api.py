@@ -12,17 +12,17 @@ def get_contacts(search_text):
         #TODO: Is the client expecting the id labeled as contact_id?
         names = search_text.split(" ")
         if len(names) == 2:
-            query = text("select name, email, master_id as contact_id from user_info \
+            query = text("select name, email, matches_id as contact_id from user_info \
                 where (split_part(lower(name),' ',1) like lower(:name1) and split_part(lower(name),' ',2) like lower(:name2)) \
                 OR (split_part(lower(name),' ',1) like lower(:name2) and split_part(lower(name),' ',2) like lower(:name1)) order by name")
             query_result = connection.execute(query, name1='{}%'.format(names[0]), name2='{}%'.format(names[1]))
         elif len(names) == 1:
-            query = text("select name, email, master_id as contact_id from user_info \
+            query = text("select name, email, matches_id as contact_id from user_info \
                 WHERE split_part(lower(name),' ',1) like :search_text \
                 OR split_part(lower(name),' ',2) like :search_text order by name")
             query_result = connection.execute(query, search_text='{}%'.format(search_text))
 
-        # we only want to display one search result per master id
+        # we only want to display one search result per matches id
         id_set  = set()
         results = []
         for result in query_result:
@@ -34,20 +34,20 @@ def get_contacts(search_text):
         return results
 
 
-@common_api.route('/api/360/<master_id>', methods=['GET'])
-def get_360(master_id):
+@common_api.route('/api/360/<matches_id>', methods=['GET'])
+def get_360(matches_id):
     result = {}
 
     with engine.connect() as connection:
-        #Master Table
-        query = text("select * from master where _id = :master_id")
-        query_result = connection.execute(query, master_id=master_id)
+        #Matches Table
+        query = text("select * from matches where _id = :matches_id")
+        query_result = connection.execute(query, matches_id=matches_id)
         #todo: this shouldn't loop so eliminate the for
-        master_row = query_result.fetchone()
+        matches_row = query_result.fetchone()
 
-        if master_row:
+        if matches_row:
             #Salesforce
-            salesforcecontacts_id = master_row['salesforcecontacts_id']
+            salesforcecontacts_id = matches_row['salesforcecontacts_id']
 
             if salesforcecontacts_id:
                 query = text("select * from salesforcecontacts where contact_id = :salesforcecontacts_id")
@@ -65,7 +65,7 @@ def get_360(master_id):
                     result['salesforcedonations'] = salesforcedonations_results
 
             #Shelterluv
-            shelterluvpeople_id = master_row['shelterluvpeople_id']
+            shelterluvpeople_id = matches_row['shelterluvpeople_id']
 
             if shelterluvpeople_id:
                 query = text("select * from shelterluvpeople where id = :shelterluvpeople_id")
@@ -76,7 +76,7 @@ def get_360(master_id):
                     result['shelterluvpeople'] = shelterluvpeople_results
 
             #Volgistics
-            volgistics_id = master_row['volgistics_id']
+            volgistics_id = matches_row['volgistics_id']
 
             if volgistics_id:
                 query = text("select * from volgistics where number = :volgistics_id")

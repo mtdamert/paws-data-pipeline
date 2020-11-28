@@ -1,9 +1,9 @@
 The logic for looking at duplicates from Karla/Meg discussion:
 
-1. Create Master from Salesforce
-2. Compare Volgistics to Master: If [fuzzy match on name above threshold] and [match on email] → combine records in Master
-3. Compare Master to PetPoint: If [fuzzy match on name above threshold] and [match on email] → combine records in Master
-4. Compare Master to ClinicHQ: If [fuzzy match on name above threshold] and [match on phone number] → combine records in Master
+1. Create Matches from Salesforce
+2. Compare Volgistics to Matches: If [fuzzy match on name above threshold] and [match on email] → combine records in Matches
+3. Compare Matches to PetPoint: If [fuzzy match on name above threshold] and [match on email] → combine records in Matches
+4. Compare Matches to ClinicHQ: If [fuzzy match on name above threshold] and [match on phone number] → combine records in Matches
 
 Trigger staff review: If [fuzzy match on name above threshold] and [no other matching data] → report for human review
 
